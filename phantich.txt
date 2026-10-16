@@ -1,0 +1,266 @@
+Dựa vào ERD trong đề, ta có thể chuyển sang mô hình quan hệ như sau. Mình phân tích đúng theo 4 bước mà đề yêu cầu, bạn có thể dùng gần như nguyên nội dung này để chụp màn hình/nộp bài.
+1. Xác định các thực thể
+Từ ERD, có 5 thực thể chính:
+STT	Thực thể	Khóa chính	Các thuộc tính
+1	PHIEUXUAT	SoPX	NgayXuat
+2	VATTU	MaVT	TenVT
+3	PHIEUNHAP	SoPN	NgayNhap
+4	DONDH	SoDH	NgayDH
+5	NHACC	MaNCC	TenNCC, DiaChi, SDT
+
+
+Trong đó cần chú ý SDT của NHACC được biểu diễn bằng hình oval kép, nghĩa là đây là thuộc tính đa trị.
+2. Xác định các mối quan hệ
+Có 4 mối quan hệ trong ERD.
+Quan hệ 1: PHIEUXUAT – VATTU
+ERD thể hiện:
+PHIEUXUAT (N) ─── CHI TIẾT PHIẾU XUẤT ─── (N) VATTU
+
+Đây là quan hệ N-N.
+Quan hệ có 2 thuộc tính:
+- DGXuat
+- SLXuat
+Do là N-N nên phải tạo bảng trung gian:
+CHITIETPHIEUXUAT
+
+Khóa chính gồm:
+(SoPX, MaVT)
+
+Quan hệ 2: VATTU – PHIEUNHAP
+ERD thể hiện:
+VATTU (N) ─── CHI TIẾT PHIẾU NHẬP ─── (N) PHIEUNHAP
+
+Đây cũng là quan hệ N-N.
+Quan hệ có:
+- DGNhap
+- SLNhap
+Do đó tạo bảng:
+CHITIETPHIEUNHAP
+
+Khóa chính:
+(SoPN, MaVT)
+
+Quan hệ 3: VATTU – DONDH
+ERD thể hiện:
+VATTU (N) ─── CHI TIẾT ĐƠN ĐẶT HÀNG ─── (N) DONDH
+
+Đây là quan hệ N-N.
+Quan hệ không có thuộc tính riêng.
+Do đó tạo bảng trung gian:
+CHITIETDONDH
+
+Khóa chính:
+(SoDH, MaVT)
+
+Quan hệ 4: DONDH – NHACC
+ERD thể hiện:
+DONDH (N) ─── CUNG CẤP ─── (1) NHACC
+
+Đây là quan hệ N-1.
+Một nhà cung cấp có thể cung cấp nhiều đơn đặt hàng, nhưng một đơn đặt hàng thuộc về một nhà cung cấp.
+Vì vậy, đưa khóa chính của NHACC sang bảng DONDH làm khóa ngoại:
+DONDH(..., MaNCC)
+
+Trong đó:
+MaNCC → FK → NHACC(MaNCC)
+
+3. Xử lý thuộc tính đa trị
+Trong ERD, SDT của NHACC được biểu diễn bằng oval kép:
+NHACC
+  |
+  +── TenNCC
+  |
+  +── DiaChi
+  |
+  +══ SDT
+
+Điều này có nghĩa một nhà cung cấp có thể có nhiều số điện thoại.
+Không nên lưu trực tiếp kiểu:
+NHACC(MaNCC, TenNCC, DiaChi, SDT)
+
+vì một MaNCC có thể có nhiều SDT.
+Ta tạo bảng riêng:
+SDT_NHACC
+
+với:
+MaNCC
+SDT
+
+Khóa chính có thể là:
+(MaNCC, SDT)
+
+MaNCC đồng thời là khóa ngoại tham chiếu đến NHACC.
+4. Danh sách các bảng sau khi chuyển đổi
+Sau khi chuyển ERD sang mô hình quan hệ, ta có 8 bảng:
+1. PHIEUXUAT
+PHIEUXUAT(
+    SoPX PK,
+    NgayXuat
+)
+
+2. VATTU
+VATTU(
+    MaVT PK,
+    TenVT
+)
+
+3. PHIEUNHAP
+PHIEUNHAP(
+    SoPN PK,
+    NgayNhap
+)
+
+4. DONDH
+Do quan hệ N-1 với NHACC, thêm MaNCC:
+DONDH(
+    SoDH PK,
+    NgayDH,
+    MaNCC FK
+)
+
+Trong đó:
+MaNCC → NHACC(MaNCC)
+
+5. NHACC
+NHACC(
+    MaNCC PK,
+    TenNCC,
+    DiaChi
+)
+
+6. CHITIETPHIEUXUAT
+Quan hệ N-N giữa PHIEUXUAT và VATTU:
+CHITIETPHIEUXUAT(
+    SoPX PK, FK,
+    MaVT PK, FK,
+    DGXuat,
+    SLXuat
+)
+
+Khóa chính:
+(SoPX, MaVT)
+
+7. CHITIETPHIEUNHAP
+Quan hệ N-N giữa PHIEUNHAP và VATTU:
+CHITIETPHIEUNHAP(
+    SoPN PK, FK,
+    MaVT PK, FK,
+    DGNhap,
+    SLNhap
+)
+
+Khóa chính:
+(SoPN, MaVT)
+
+8. CHITIETDONDH
+Quan hệ N-N giữa DONDH và VATTU:
+CHITIETDONDH(
+    SoDH PK, FK,
+    MaVT PK, FK
+)
+
+Khóa chính:
+(SoDH, MaVT)
+
+9. SDT_NHACC
+Thuộc tính đa trị SDT:
+SDT_NHACC(
+    MaNCC PK, FK,
+    SDT PK
+)
+
+Khóa chính:
+(MaNCC, SDT)
+
+Tổng hợp mô hình quan hệ
+Có thể viết gọn toàn bộ kết quả như sau:
+PHIEUXUAT(
+    SoPX PK,
+    NgayXuat
+)
+
+VATTU(
+    MaVT PK,
+    TenVT
+)
+
+PHIEUNHAP(
+    SoPN PK,
+    NgayNhap
+)
+
+NHACC(
+    MaNCC PK,
+    TenNCC,
+    DiaChi
+)
+
+DONDH(
+    SoDH PK,
+    NgayDH,
+    MaNCC FK → NHACC(MaNCC)
+)
+
+CHITIETPHIEUXUAT(
+    SoPX PK, FK → PHIEUXUAT(SoPX),
+    MaVT PK, FK → VATTU(MaVT),
+    DGXuat,
+    SLXuat
+)
+
+CHITIETPHIEUNHAP(
+    SoPN PK, FK → PHIEUNHAP(SoPN),
+    MaVT PK, FK → VATTU(MaVT),
+    DGNhap,
+    SLNhap
+)
+
+CHITIETDONDH(
+    SoDH PK, FK → DONDH(SoDH),
+    MaVT PK, FK → VATTU(MaVT)
+)
+
+SDT_NHACC(
+    MaNCC PK, FK → NHACC(MaNCC),
+    SDT PK
+)
+
+Lưu ý: Tổng cộng là 9 bảng, không phải 8, vì SDT là thuộc tính đa trị nên phải sinh thêm bảng SDT_NHACC.
+Sơ đồ quan hệ sau chuyển đổi
+                 NHACC
+              PK MaNCC
+            TenNCC
+            DiaChi
+               │
+               │ 1:N
+               ▼
+             DONDH
+          PK SoDH
+          NgayDH
+          FK MaNCC
+               │
+               │ N:N
+               ▼
+       CHITIETDONDH
+       PK/FK SoDH
+       PK/FK MaVT
+               ▲
+               │
+               │
+             VATTU
+          PK MaVT
+          TenVT
+          ▲     ▲
+          │     │
+        N:N     N:N
+          │     │
+          │     │
+ CHITIETPHIEU... ...
+
+Và bảng số điện thoại:
+NHACC 1 ───────── N SDT_NHACC
+
+SDT_NHACC(
+    PK/FK MaNCC,
+    PK SDT
+)
